@@ -375,3 +375,17 @@
 #define HYB_MASS_WORD                0x90830004   /* US 0x90830004 */
 #define HYB_MASS_DELAY_WORD          0x90820003   /* US 0x90820003 */
 #define CAR_MASS_TABLE               0x002D3E70   /* US 0x002D28B0 */
+
+/* ------------------------------------------------------------------ movies */
+#define MPEG_MODE_SIZE_BNE           0x001CDD50   /* US 0x001CCE48 */
+#define MPEG_MODE_SIZE_BNE_WORD      0x14A20008   /* US 0x14A20008 */
+#define MPEG_MODE_SIZE_FRAME         0x001CDD74   /* US 0x001CCE6C */
+#define MPEG_MODE_DRAW_BNE           0x001CE080   /* US 0x001CD178 */
+#define MPEG_MODE_DRAW_BNE_WORD      0x14430005   /* US 0x14430005 */
+#define MPEG_MODE_DRAW_FRAME         0x001CE098   /* US 0x001CD190 */
+
+/* ----------------------------------------------------------------- console */
+#define SCF_TIMEZONE_PRINTF          0x00275A20   /* US 0x002747E8 */
+#define SCF_TIMEZONE_PRINTF_WORD     0x0C09B632   /* US 0x0C09B1A4 */
+#define SCF_SUMMERTIME_PRINTF        0x00275B24   /* US 0x002748EC */
+#define SCF_SUMMERTIME_PRINTF_WORD   0x0C09B632   /* US 0x0C09B1A4 */

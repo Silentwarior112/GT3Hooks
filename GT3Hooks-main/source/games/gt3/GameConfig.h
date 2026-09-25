@@ -176,3 +176,24 @@
     Dualnote's charge in steps of 10%.
 */
 #define DRIVE_DIAG 0
+
+/* ------------------------------------------------------------------ movies */
+
+/*
+    1 = every movie (.pss) in frame mode, the endings' mode: the whole picture
+    is shown as one frame, 30 per second. 0 = the game's own choice per movie,
+    which puts the opening in field mode: each picture holds two fields
+    stacked, shown one per display field, 60 per second. With 1, a movie
+    encoded for field mode shows both of its fields at once, so those movies
+    must be replaced with ones encoded as ordinary frames.
+*/
+#define MOVIE_FRAME_MODE 1
+
+/* ----------------------------------------------------------------- console */
+
+/*
+    1 = silence the "Timezone=" and "SummerTime=" lines the game prints to the
+    console every frame. The time zone and summer time are still read as
+    before; only the printing goes.
+*/
+#define QUIET_TIME_LOG 1

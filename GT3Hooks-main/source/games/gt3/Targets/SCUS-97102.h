@@ -794,3 +794,55 @@
 #define HYB_MASS_WORD           0x90830004
 #define HYB_MASS_DELAY_WORD     0x90820003  /* 0x001DCF50 lbu v0,3(a0) - kept        */
 #define CAR_MASS_TABLE          0x002D28B0
+
+/* ------------------------------------------------------------------ movies */
+
+/*
+    Every .pss - the opening, the endings, the title and the menu movies - is
+    played by one MPEG object (0x002CDC10), and its mode word, +0x54, decides
+    how each decoded picture is shown:
+
+      1  field mode: the picture is two fields stacked, and each display field
+         uploads its half (0x001CCEC0) into a half-height texture - 60 Hz
+      0  frame mode: the whole picture is uploaded (0x001CD048) and shown as
+         one frame - 30 Hz
+
+    The object's set-up (0x001CCC50) stores a default of 1, and open
+    (0x001CD458) stores the caller's params+0x0C: 1 from the opening, 0 from
+    both endings. The word is read by exactly two functions, and each decides
+    with one `bne` to its frame-mode case; made an unconditional branch, every
+    movie plays in frame mode whatever the word holds:
+
+      the texture sizing (0x001CCDF8): field mode sizes for half the height
+      the per-frame upload (0x001CD168): field mode uploads half the picture
+
+    The writers are left alone - EU's open was recompiled with other
+    registers - and the readers are identical in both builds.
+*/
+#define MPEG_MODE_SIZE_BNE        0x001CCE48  /* bne a1,v0(=1) in the sizing        */
+#define MPEG_MODE_SIZE_BNE_WORD   0x14A20008
+#define MPEG_MODE_SIZE_FRAME      0x001CCE6C  /* its target: sized for the full height */
+#define MPEG_MODE_DRAW_BNE        0x001CD178  /* bne v0,v1(=1) in the upload choice */
+#define MPEG_MODE_DRAW_BNE_WORD   0x14430005
+#define MPEG_MODE_DRAW_FRAME      0x001CD190  /* its target: jal the whole-picture upload */
+
+/* ----------------------------------------------------------------- console */
+
+/*
+    Sony's system-configuration library prints each setting it reads from the
+    kernel's OSD configuration, and the game reads the time zone and summer
+    time every frame - two console lines a frame:
+
+        0x002747A0  time zone (sceScfGetTimeZone)      printf("Timezone=%d\n")
+        0x00274888  summer time (sceScfGetSummerTime)  printf("SummerTime=%d\n")
+
+    (The names are the library's, INFERRED from its strings.) Each returns its
+    value after the print, never from it, so a nop in place of the jal changes
+    nothing else; the jal's delay slot, move a1,s0, then runs on its own,
+    harmlessly. The date and time notation getters next to them (0x00274808,
+    0x00274908) print the same way but are not among the per-frame lines.
+*/
+#define SCF_TIMEZONE_PRINTF         0x002747E8  /* jal printf, "Timezone=%d\n"     */
+#define SCF_TIMEZONE_PRINTF_WORD    0x0C09B1A4
+#define SCF_SUMMERTIME_PRINTF       0x002748EC  /* jal printf, "SummerTime=%d\n"   */
+#define SCF_SUMMERTIME_PRINTF_WORD  0x0C09B1A4

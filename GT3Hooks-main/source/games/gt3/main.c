@@ -24,6 +24,56 @@
 /* The kernel's FlushCache(int op) - integers only. */
 static void (*FlushCache)(int op) = (void*)ADDR_FlushCache;
 
+/* A word of the game's image, for the in-place edits below. */
+#define W(a)                (*(volatile unsigned int*)(a))
+
+#if MOVIE_FRAME_MODE
+/*
+    Every movie in frame mode (GameConfig.h). The MPEG object's mode word is
+    read by exactly two functions, each deciding with one `bne` to its
+    frame-mode case (Targets/SCUS-97102.h, "movies"); both become an
+    unconditional branch there. Nothing of the plugin runs afterwards.
+*/
+#define B_TO(site, target)  (0x10000000u | ((((target) - (site) - 4) >> 2) & 0xFFFFu))
+
+static void Movie_FrameMode(void)
+{
+    if (W(MPEG_MODE_SIZE_BNE) != MPEG_MODE_SIZE_BNE_WORD ||
+        W(MPEG_MODE_DRAW_BNE) != MPEG_MODE_DRAW_BNE_WORD) {
+        LOG("[gt3hooks] movie: mode branches hold %08X %08X, expected %08X %08X - "
+            "frame mode NOT installed\n",
+            W(MPEG_MODE_SIZE_BNE), W(MPEG_MODE_DRAW_BNE),
+            MPEG_MODE_SIZE_BNE_WORD, MPEG_MODE_DRAW_BNE_WORD);
+        return;
+    }
+    PATCH_INT(MPEG_MODE_SIZE_BNE, B_TO(MPEG_MODE_SIZE_BNE, MPEG_MODE_SIZE_FRAME));
+    PATCH_INT(MPEG_MODE_DRAW_BNE, B_TO(MPEG_MODE_DRAW_BNE, MPEG_MODE_DRAW_FRAME));
+    LOG("[gt3hooks] movie: every movie plays in frame mode\n");
+}
+#endif
+
+#if QUIET_TIME_LOG
+/*
+    The per-frame "Timezone=" and "SummerTime=" console lines (GameConfig.h):
+    the jal to printf in each of the two getters becomes a nop
+    (Targets/SCUS-97102.h, "console").
+*/
+static void Quiet_TimeLog(void)
+{
+    if (W(SCF_TIMEZONE_PRINTF) != SCF_TIMEZONE_PRINTF_WORD ||
+        W(SCF_SUMMERTIME_PRINTF) != SCF_SUMMERTIME_PRINTF_WORD) {
+        LOG("[gt3hooks] console: printf calls hold %08X %08X, expected %08X %08X - "
+            "Timezone/SummerTime lines NOT silenced\n",
+            W(SCF_TIMEZONE_PRINTF), W(SCF_SUMMERTIME_PRINTF),
+            SCF_TIMEZONE_PRINTF_WORD, SCF_SUMMERTIME_PRINTF_WORD);
+        return;
+    }
+    NOP(SCF_TIMEZONE_PRINTF);
+    NOP(SCF_SUMMERTIME_PRINTF);
+    LOG("[gt3hooks] console: Timezone/SummerTime lines silenced\n");
+}
+#endif
+
 void init(void)
 {
     /*
@@ -67,6 +117,14 @@ void init(void)
 
 #if GBX_ENABLE || HYB_ENABLE
     Drive_InstallHooks();           /* gearbox types, Honda Dualnote */
+#endif
+
+#if MOVIE_FRAME_MODE
+    Movie_FrameMode();              /* every movie in frame mode */
+#endif
+
+#if QUIET_TIME_LOG
+    Quiet_TimeLog();                /* no per-frame Timezone/SummerTime lines */
 #endif
 
     /*
