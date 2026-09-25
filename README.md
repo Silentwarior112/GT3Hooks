@@ -13,6 +13,9 @@ Transplanting GT Concept's sound files is required to get the Pod's sounds.
 Requires appending a column to the ParamDB's GEAR table: 0x30 as a byte. <br>
 - **4wd types** — Rear-drive hybrid, crank motor, front motors, battery (Type 5) <br>
 
+## Decompressing a GT3 ELF for custom builds
+An updated [ELFBuilderTool](https://github.com/Silentwarior112/PDTools/releases/tag/GT4ElfBuilderTool-gt3fix_1.0) is required to handle `core.gt3` correctly.
+
 ## Building with `build.bat`
 
 ```
