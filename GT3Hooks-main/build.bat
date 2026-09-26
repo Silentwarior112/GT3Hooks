@@ -42,11 +42,17 @@ set "ROOT=%~dp0"
 
 :: Read the overrides if set, else fall back to siblings of the repo. These are
 :: copied into differently-named locals on purpose: exporting these back into
-:: make would hand it Windows backslash separators.
+:: make would hand it Windows backslash separators. Each is made a full path
+:: with no ..\ in it, so every message below names the real folder; a relative
+:: override counts from where build was run, as it would in any command.
 set "SDKDIR=%PS2SDK_HOME%"
 if not defined SDKDIR set "SDKDIR=%ROOT%..\ps2sdk-main"
 set "WORKDIR=%WORK%"
 if not defined WORKDIR set "WORKDIR=%ROOT%..\GT3Hooks-work"
+for %%P in ("%SDKDIR%") do set "SDKDIR=%%~fP"
+for %%P in ("%WORKDIR%") do set "WORKDIR=%%~fP"
+if "%SDKDIR:~-1%"=="\" set "SDKDIR=%SDKDIR:~0,-1%"
+if "%WORKDIR:~-1%"=="\" set "WORKDIR=%WORKDIR:~0,-1%"
 
 :: Kept as two variables on purpose: folding the -File path into one quoted
 :: value nests quotes, which cmd mangles inside for /f.
@@ -54,9 +60,10 @@ set "PSRUN=powershell -NoProfile -ExecutionPolicy Bypass -File"
 set "VSMAKE=%SDKDIR%\ee\bin\vsmake.ps1"
 
 if not exist "%VSMAKE%" (
-    echo ERROR: no ps2sdk at "%SDKDIR%".
+    echo ERROR: no ps2sdk at "%SDKDIR%"
+    echo        ^(looked for "%VSMAKE%"^).
     echo        GT3Hooks does not vendor the SDK - see the README.
-    echo        Set PS2SDK_HOME to your checkout, or put it at ..\ps2sdk-main
+    echo        Put the SDK there, or set PS2SDK_HOME to where it is.
     exit /B 1
 )
 
@@ -104,6 +111,13 @@ if not defined REGION (
 echo Unexpected argument "%ARG%".
 goto :usage_fail
 :parsed
+
+:: make reads the makefile and its paths from the current folder, so the build
+:: runs from the repo root wherever it was started; setlocal puts the caller's
+:: folder back at the end. An out: path is made absolute first, so it still
+:: counts from where build was run.
+if defined OUTCOPY for %%P in ("%OUTCOPY%") do set "OUTCOPY=%%~fP"
+cd /d "%ROOT%"
 
 if "%GAME%"=="" goto :list
 if /I "%GAME%"=="--list" goto :list
@@ -183,7 +197,8 @@ set "STARTUP_CALL="
 :: both platforms is only the stand-in above - so the choice is put back after.
 set "WANTPLATFORM=%PLATFORM%"
 set "CFGTMP=%TEMP%\gt3hooks_cfg_%RANDOM%.txt"
-%PSRUN% "%VSMAKE%" %MAKEARGS% --no-print-directory -s print-config > "%CFGTMP%" 2>nul
+set "CFGERR=%CFGTMP%.err"
+%PSRUN% "%VSMAKE%" %MAKEARGS% --no-print-directory -s print-config > "%CFGTMP%" 2> "%CFGERR%"
 for /f "usebackq tokens=1,* delims==" %%A in ("%CFGTMP%") do (
     set "%%A=%%B"
 )
@@ -191,12 +206,18 @@ del /q "%CFGTMP%" >nul 2>&1
 set "PLATFORM=%WANTPLATFORM%"
 
 :: A blank BUILD would give the injector an empty -o, which is silently
-:: destructive. Refuse rather than guess.
+:: destructive. Refuse rather than guess, and show what make said.
 if "%BUILD%"=="" (
-    echo ERROR: could not read the build configuration from make.
-    echo        Region "%REGION%" may not be valid for game "%GAME%".
+    echo ERROR: make could not give the build configuration for %GAME% %REGION%.
+    echo        It ran "%VSMAKE%" in "%CD%".
+    for %%E in ("%CFGERR%") do if %%~zE gtr 0 (
+        echo        make said:
+        type "%CFGERR%"
+    )
+    del /q "%CFGERR%" >nul 2>&1
     exit /B 1
 )
+del /q "%CFGERR%" >nul 2>&1
 
 set "BUILDDIR=%WORKDIR%\out\%GAME%\%BUILD%"
 
@@ -259,7 +280,9 @@ if not exist "%BASEIMG%" (
     exit /B 0
 )
 if not exist "%INJECTOR%" (
-    echo ps2plugininjector.exe not found at "%INJECTOR%"
+    echo ERROR: no ps2plugininjector.exe at "%INJECTOR%".
+    echo        Put it in "%WORKDIR%", or set WORK to the folder that has it.
+    echo        The plugin was built: "%PLUGIN%"
     exit /B 1
 )
 
