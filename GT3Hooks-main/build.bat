@@ -271,9 +271,10 @@ set "INJECTOR=%WORKDIR%\ps2plugininjector.exe"
 if not exist "%BASEIMG%" (
     echo.
     echo No base image at "%BASEIMG%" - stopping after the plugin build.
-    echo Create it from the game's core.gt3 with tools\gt3\gt3pack.py:
-    echo     python tools\gt3\gt3pack.py elf ^<CORE_%BUILD%^> "%BASEIMG%"
-    echo Do NOT use PDTools.GT4ElfBuilderTool - its single-segment path
+    echo Create it from the game's core.gt3 with the ElfBuilderTool linked in the
+    echo GT3Hooks README.md:
+    echo     ^<ElfBuilderTool^> ^<CORE_%BUILD%^> "%BASEIMG%"
+    echo Use that build of it - older builds' single-segment path
     echo truncates the image by 0x18 bytes and emits a broken section table.
     echo See FINDINGS.md section 9.
     if defined OUTCOPY echo out: had nothing to copy - no executable was produced.
