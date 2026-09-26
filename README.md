@@ -17,6 +17,7 @@ Requires appending a column to the ParamDB's GEAR table: 0x30 as a byte. <br>
 An updated [ELFBuilderTool](https://github.com/Silentwarior112/PDTools/releases/tag/GT4ElfBuilderTool-gt3fix_1.0) is required to handle `core.gt3` correctly.
 
 ## Building with `build.bat`
+[This ps2sdk](https://github.com/ThirteenAG/ps2sdk) is required.
 
 ```
 build                                        list the builds
